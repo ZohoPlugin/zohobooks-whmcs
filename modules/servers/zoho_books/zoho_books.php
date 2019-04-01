@@ -49,80 +49,93 @@ function zoho_books_ConfigOptions()
          // the radio field type displays a series of radio button options
         'Domain' => array(
             'Type' => 'radio',
-            'Options' => 'com,eu,cn,in',
+            'Options' => 'com,eu',
             'Description' => 'Choose your domain!',
+            'Default' => 'com',
         ),
         // a text field type allows for single line text input
         'Authtoken' => array(
             'Type' => 'text',
             'Size' => '50',
+            'Default' => '',
             'Description' => '<br><a href="https://accounts.zoho.com/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi" target="_blank">Click here</a> to generate authtoken for US Domain. 
-            <br><a href="https://accounts.zoho.eu/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi" target="_blank">Click here</a> to generate authtoken for EU Domain. 
-            <br><a href="https://accounts.zoho.com.cn/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi" target="_blank">Click here</a> to generate authtoken for CN Domain. 
-            <br><a href="https://accounts.zoho.in/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi" target="_blank">Click here</a> to generate authtoken for IN Domain.',
+            <br><a href="https://accounts.zoho.eu/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi" target="_blank">Click here</a> to generate authtoken for EU Domain.', 
         ),
        
     );
 }
 function zoho_books_CreateAccount(array $params)
 {
-	$addonid;
+	$planid;
+	$bodyArr = [];
 	$test = $params['configoption2'];
-  $domain = $params['configoption1'];
+	$plantype = $params['configoptions']['Plan Type'];
 	try {
-	$curl = curl_init();
-	$arrClient = $params['clientsdetails'];
-	$planid = $params['configoptions']['Plan Type'];
-	 
-	$bodyArr = json_encode(array(
-		//'JSONString' => array(
-		"serviceid" => 4601,
-		"email" => $arrClient['email'],
-		"customer" => array(
-		"companyname" => $arrClient['companyname'],
-		"street" => $arrClient['address1'],
-		"city" => $arrClient['city'],
-		"state" => $arrClient['state'],
-		"country" => $arrClient['countryname'],
-		"zipcode" => $arrClient['postcode'],
-		"phone" => $arrClient['phonenumber']
-		),
-		"subscription" => array(
-		"plan" => $planid,
-		"addons" => array(
-		),
-		"payperiod" => "YEAR",
-		"currency" => "1",
-		"addprofile" => "true"
-		),
-		//),
-	));
+    	$curl = curl_init();
+    	$arrClient = $params['clientsdetails'];
+    	$country = $arrClient['countryname'];
+    	$domain = $params['configoption1'];
+    	if($country == 'Australia' || $country == 'Canada')
+    	{
+    	    if($plantype == "Basic") {
+    	        $planid = 10518;
+    	    }
+    	    else if($plantype == "Standard") {
+    	        $planid = 10519;
+    	    }
+    	    else {
+    	        $planid = 10520;
+    	    }
+    	}
+        else {
+            if($plantype == "Basic") {
+                $planid = 10504;
+            }
+            else if($plantype == "Standard") {
+                $planid = 10505;
+            }
+            else {
+                $planid = 10508;
+            }
+        }
+            $bodyArr = json_encode(array(
+        		"serviceid" => 4601,
+        		"email" => $arrClient['email'],
+        		"customer" => array(
+        		"companyname" => $arrClient['companyname'],
+        		"street" => $arrClient['address1'],
+        		"city" => $arrClient['city'],
+        		"state" => $arrClient['state'],
+        		"country" => $country,
+        		"zipcode" => $arrClient['postcode'],
+        		"phone" => $arrClient['phonenumber']
+        		),
+        		"subscription" => array(
+        		"plan" => $planid,
+        		"addons" => array(
+        		),
+        		"payperiod" => "YEAR",
+        		"currency" => "1",
+        		"addprofile" => "true"
+        		),
+    	    ));
 	$authtoken = array(
 	"authtoken" => $test
 	);
-	 
-	$bodyJson = array('JSONString' => $bodyArr, 'authtoken' => $test);
+        $bodyJson = array('JSONString' => $bodyArr, 'authtoken' => $test);
 	$bodyJsn = json_encode($bodyJson);
-   $curlOrg = curl_init();
-  if($domain == 'cn')
-	{
-		$urlOrg = 'https://payments.zoho.com.'.$params['configoption1'].'/restapi/partner/v1/json/subscription';		
-	}
-	else 
-	{
-   		$urlOrg = 'https://payments.zoho.'.$params['configoption1'].'/restapi/partner/v1/json/subscription';
-	}
-   curl_setopt_array($curlOrg, array(
-      CURLOPT_URL => $urlOrg,
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_ENCODING => "",
-      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-      CURLOPT_CUSTOMREQUEST => "POST",
-      CURLOPT_POSTFIELDS => $bodyJson
-   ));
+        $curlOrg = curl_init();
+	$urlOrg = 'https://payments.zoho.'.$params['configoption1'].'/restapi/partner/v1/json/subscription';
+	   curl_setopt_array($curlOrg, array(
+	      CURLOPT_URL => $urlOrg,
+	      CURLOPT_RETURNTRANSFER => true,
+	      CURLOPT_ENCODING => "",
+	      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+	      CURLOPT_CUSTOMREQUEST => "POST",
+	      CURLOPT_POSTFIELDS => $bodyJson
+	   ));
 
 		$responseOrg = curl_exec($curlOrg);
-		//return array('success' => $responseOrg);
 		$respOrgJson = json_decode($responseOrg); 
 		$getInfo = curl_getinfo($curlOrg,CURLINFO_HTTP_CODE);
 		curl_close($curlOrg);
@@ -132,9 +145,8 @@ function zoho_books_CreateAccount(array $params)
 		    if($customid != '') {
 		        $pdo = Capsule::connection()->getPdo();
 		        $pdo->setAttribute(PDO::ATTR_AUTOCOMMIT, 0 );
-		        //$pdo->beginTransaction();
 		        try {
-			        $statement = $pdo->prepare('insert into zoho_books (authtoken,domain,server,zoid,profileid,superAdmin) values (:authtoken, :domain, :server, :zoid, :profileid, :superAdmin)');
+			    $statement = $pdo->prepare('insert into zoho_books (authtoken,domain,server,zoid,profileid,superAdmin) values (:authtoken, :domain, :server, :zoid, :profileid, :superAdmin)');
 	 
 		            $statement->execute(
         		     [
@@ -171,12 +183,9 @@ function zoho_books_CreateAccount(array $params)
 			    else
         		{
         		    return 'Failed -->Description: '.$respOrgJson->status->description.' --->More Information:'.$respOrgJson->data->moreInfo.'--------------'.$getInfo;
-        	    }
-    		        
-    		    
+        	    }   
     		}
     		else if($getInfo == '400') {
-    		    //$errorMsg = $respOrgJson->ERRORMSG;
     		    return 'Failed -->  Invalid Authtoken.';
     		}
     		else{
@@ -194,7 +203,6 @@ function zoho_books_CreateAccount(array $params)
 		);
 		return $e->getMessage();
 	    }
- 
 }
 function zoho_books_TestConnection(array $params)
 {
@@ -221,36 +229,27 @@ function zoho_books_TestConnection(array $params)
 }
 function zoho_books_AdminServicesTabFields(array $params)
 {
- 
-   try{
-   $url;
-   $paymenturl;
-	$cli = Capsule::table('zoho_books')->where('domain',$params['domain'])->first();
-  $domain = $params['configoption1'];
-  if($domain == 'cn') 
-	{
-	    $url = 'https://accounts.zoho.com.'.$domain.'/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi';
-	    $paymenturl = 'https://payments.zoho.com.'.$domain.'/store/reseller.do?profileId='.$cli->profileid;
-	}
-	else
-    {
-        $url = 'https://accounts.zoho.'.$domain.'/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi';
-        $paymenturl = 'https://payments.zoho.'.$domain.'/store/reseller.do?profileId='.$cli->profileid;
-    }
+ try{
+    $url;
+    $paymenturl;
+    $cli = Capsule::table('zoho_books')->where('domain',$params['domain'])->first();
+    $domain = $params['configoption1'];
+    $url = 'https://accounts.zoho.'.$domain.'/apiauthtoken/create?SCOPE=ZohoPayments/partnerapi';
+    $paymenturl = 'https://payments.zoho.'.$domain.'/store/reseller.do?profileId='.$cli->profileid;
 	$authtoken = $params['configoption2'];
 	if(!$authtoken == '') {
-	$authtoken = '<h2 style="color:green;">Authenticated</h2>';
+	    $authtoken = '<h2 style="color:green;">Authenticated</h2>';
 	}
 	else {
-	$authtoken = '<a href="'.$url.'" type="submit" target="_blank"> Click here </a> (Call only once for authenticating)';
+	    $authtoken = '<a href="'.$url.'" type="submit" target="_blank"> Click here </a> (Call only once for authenticating)';
 	}
 	$response = array();
 	 
 	return array(
-	     'Authenticate' => $authtoken,
-	     'Super Administrator' => $cli->superAdmin,
-	     'ZOID' => $cli->zoid,
-       'URL to Manage Customers' => '<a href="'.$paymenturl.'" target=_window>Click here</a>'
+	    'Authenticate' => $authtoken,
+	    'Super Administrator' => $cli->superAdmin,
+	    'ZOID' => $cli->zoid,
+            'URL to Manage Customers' => '<a href="'.$paymenturl.'" target=_window>Click here</a>'
 	    );
 	 
     } catch (Exception $e) {
@@ -262,7 +261,7 @@ function zoho_books_AdminServicesTabFields(array $params)
 	    $e->getTraceAsString()
 	);
     }
-	    return array();
+return array();
 }
 function zoho_books_AdminServicesTabFieldsSave(array $params)
 {
@@ -338,25 +337,16 @@ function zoho_books_ClientArea(array $params)
 {
     $serviceAction = 'get_stats';
     $templateFile = 'templates/overview.tpl';
-    $booksurl;
-	$domain = $params['configoption1'];
-	if($domain == 'cn')
-    {
-        $booksurl = 'https://books.zoho.com.cn';
-    }
-    else
-    {
-        $booksurl = 'https://books.zoho.'.$domain;
-    }
+    $booksurl = 'https://books.zoho.'.$domain;
     try {
       $cli = Capsule::table('zoho_books')->where('zoid',$params['zoid'])->first();
       $urlToPanel = $cli->url;
-	return array(
-	    'tabOverviewReplacementTemplate' => $templateFile,
+	  return array(
+        'tabOverviewReplacementTemplate' => $templateFile,
 	    'templateVariables' => array(
-	     'booksUrl' => $booksurl
-	    ),
-	);
+	        'booksUrl' => $booksurl
+    	 ),
+	  );
     } catch (Exception $e) {
 	// Record the error in WHMCS's module log.
 	logModuleCall(
