@@ -337,14 +337,14 @@ function zoho_books_ClientArea(array $params)
 {
     $serviceAction = 'get_stats';
     $templateFile = 'templates/overview.tpl';
-    $booksurl = 'https://books.zoho.'.$domain;
+    $booksUrl = 'https://books.zoho.'.$domain;
     try {
       $cli = Capsule::table('zoho_books')->where('zoid',$params['zoid'])->first();
       $urlToPanel = $cli->url;
 	  return array(
         'tabOverviewReplacementTemplate' => $templateFile,
 	    'templateVariables' => array(
-	        'booksUrl' => $booksurl
+	        'booksUrl' => $booksUrl
     	 ),
 	  );
     } catch (Exception $e) {
