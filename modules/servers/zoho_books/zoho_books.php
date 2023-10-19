@@ -118,33 +118,90 @@ function zoho_books_CreateAccount(array $params)
 	$cli = Capsule::table('zoho_books_auth_table')->first();
 	$accessToken = get_access_token_books(array());
 	$plantype = $params['configoptions']['Plan Type'];
+	$planaddon = $params['configoptions']['Plan Addons'];
 	try {
     	$curl = curl_init();
     	$arrClient = $params['clientsdetails'];
     	$country = $arrClient['countryname'];
-    	if($country == 'Australia' || $country == 'Canada')
+
+	if($country == 'Kenya')
     	{
-    	    if($plantype == "Basic") {
-    	        $planid = 10518;
+    	    if($plantype == "Standard") {
+    	        $planid = 10592;
+    	    }else if($plantype == "Professional") {
+    	        $planid = 10593;
+    	    }else if($plantype == "Premium"){
+    	        $planid = 10594;
+    	    }else if($plantype == "Elite"){
+    	        $planid = 10595;
+    	    }else{
+    	        $planid = 10596;
     	    }
-    	    else if($plantype == "Standard") {
-    	        $planid = 10519;
-    	    }
-    	    else {
-    	        $planid = 10520;
+    	    
+    	    if($planaddon == "Users Addon"){
+    	        $addonid = 4645;
+    	    }else{
+    	        $addonid = 4649;
     	    }
     	}
-        else {
-            if($plantype == "Basic") {
-                $planid = 10504;
+        else if($country == 'Mexico'){
+            if($plantype == "Standard") {
+                $planid = 10587;
+            }else if($plantype == "Professional") {
+                $planid = 10588;
+            }else if($plantype == "Premium"){
+                $planid = 10589;
+            }else if($plantype == "Elite"){
+                $planid = 10590;
+            }else{
+                $planid = 10591;
             }
-            else if($plantype == "Standard") {
-                $planid = 10505;
-            }
-            else {
-                $planid = 10508;
-            }
+            
+            if($planaddon == "Users Addon"){
+    	        $addonid = 4644;
+    	    }else{
+    	        $addonid = 4648;
+    	    }
         }
+        else if($country == 'South Africa'){
+            if($plantype == "Standard"){
+                $planid = 96101;
+            }else if($plantype == "Professional"){
+                $planid = 96102;
+            }else if($plantype == "Premium"){
+                $planid = 96103;
+            }else if($plantype == "Elite"){
+                $planid = 96014;
+            }else{
+                $planid = 96105;
+            }
+            
+            if($planaddon == "Users Addon"){
+    	        $addonid = 96201;
+    	    }else{
+    	        $addonid = 4632;
+    	    }
+        }
+        else{
+            if($plantype == "Standard"){
+                $planid = 10570;
+            }else if($plantype == "Professional"){
+                $planid = 10571;
+            }else if($plantype == "Premium"){
+                $planid = 10572;
+            }else if($plantype == "Elite"){
+                $planid = 10573;
+            }else{
+                $planid = 10574;
+            }
+            
+            if($planaddon == "Users Addon"){
+    	        $addonid = 4633;
+    	    }else{
+    	        $addonid = 4632;
+    	    }
+        }
+        
         $planmode = $params['configoptions']['Mode of Plan'];
         if($planmode == "Assign Paid Plan"){
             $bodyArr = array(
@@ -162,6 +219,9 @@ function zoho_books_CreateAccount(array $params)
         		"subscription" => array(
         		"plan" => $planid,
         		"addons" => array(
+			   array(
+        		         "id" => $addonid
+        		    )
         		),
         		"payperiod" => "YEAR"
         		)
